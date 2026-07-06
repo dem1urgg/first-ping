@@ -3,7 +3,7 @@
 
 **First lines that get replies.** Paste your target's public info (LinkedIn bio, website text) and what you're offering — get two personalized outreach messages that don't sound like AI.
 
-**Live:** _coming soon_ <!-- replace with your URL after deploy -->Live: https://first-ping-pi.vercel.app/ 
+**Live:** https://first-ping-pi.vercel.app/ 
 
 ## Why
 
