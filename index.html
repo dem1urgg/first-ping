@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cold Outreach Personalizer — first lines that get replies</title>
+<meta name="description" content="Paste someone's public info and your offer. Get two personalized outreach messages that don't sound like AI." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #FDFDFB;
+    --ink: #14213D;
+    --ink-soft: #4A5568;
+    --postal-red: #D64541;
+    --postal-blue: #2B50AA;
+    --line: #D8D5CC;
+    --card: #FFFFFF;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', system-ui, sans-serif;
+    --body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; animation: none !important; } }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Airmail stripe — the signature element */
+  .airmail {
+    height: 10px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--postal-red) 0 14px,
+      var(--paper) 14px 22px,
+      var(--postal-blue) 22px 36px,
+      var(--paper) 36px 44px
+    );
+  }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 96px; }
+
+  header { padding: 56px 0 40px; }
+  .stamp {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--postal-blue);
+    border: 1.5px solid var(--postal-blue);
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 3px;
+    transform: rotate(-2deg);
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(30px, 5.5vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    max-width: 15ch;
+  }
+  h1 .red { color: var(--postal-red); }
+  .sub { margin-top: 14px; color: var(--ink-soft); max-width: 52ch; }
+
+  /* Envelope form */
+  form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 28px;
+    box-shadow: 0 1px 2px rgba(20,33,61,0.05), 0 8px 24px rgba(20,33,61,0.06);
+  }
+  .field { margin-bottom: 22px; }
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  label .hint { color: var(--ink-soft); text-transform: none; letter-spacing: 0; font-weight: 400; }
+  textarea, select {
+    width: 100%;
+    font-family: var(--body);
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+  textarea { min-height: 120px; resize: vertical; }
+  textarea:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--postal-blue);
+    outline-offset: 2px;
+  }
+  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; }
+
+  .counter { font-family: var(--mono); font-size: 11px; color: var(--ink-soft); text-align: right; margin-top: 4px; }
+
+  button.send {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: var(--postal-red);
+    border: none;
+    border-radius: 4px;
+    padding: 14px 28px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.08s ease, background 0.15s ease;
+  }
+  button.send:hover { background: #BC3A36; }
+  button.send:active { transform: translateY(1px); }
+  button.send:disabled { background: var(--ink-soft); cursor: wait; }
+
+  .status {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    display: none;
+  }
+  .status.loading { display: block; color: var(--postal-blue); }
+  .status.error { display: block; color: var(--postal-red); }
+
+  /* Output */
+  #results { margin-top: 48px; display: none; }
+  .results-head {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .msg-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(20,33,61,0.05);
+  }
+  .msg-card .airmail { height: 7px; }
+  .msg-body { padding: 22px 24px; }
+  .msg-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--postal-blue);
+    margin-bottom: 10px;
+  }
+  .msg-subject { font-family: var(--display); font-weight: 500; font-size: 15px; margin-bottom: 10px; }
+  .msg-text { white-space: pre-wrap; font-size: 15px; }
+  .msg-actions { display: flex; justify-content: flex-end; padding: 0 24px 18px; }
+  button.copy {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--postal-blue);
+    background: transparent;
+    border: 1.5px solid var(--postal-blue);
+    border-radius: 3px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  button.copy:hover { background: var(--postal-blue); color: #fff; }
+
+  .editor-note {
+    border-left: 3px solid var(--postal-red);
+    padding: 4px 0 4px 16px;
+    margin-top: 8px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    font-style: italic;
+  }
+  .editor-note strong { color: var(--postal-red); font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  footer a { color: var(--postal-blue); }
+
+  @media (max-width: 520px) {
+    form { padding: 20px 16px; }
+    header { padding: 40px 0 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="airmail" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <div class="stamp">Par avion · No templates</div>
+    <h1>First lines that <span class="red">get replies.</span></h1>
+    <p class="sub">Paste your target's public info and what you're offering. Get two personalized outreach messages written to sound like you — not like AI.</p>
+  </header>
+
+  <form id="form" novalidate>
+    <div class="field">
+      <label for="target">To — who are you writing to? <span class="hint">(paste their LinkedIn About, bio, or website text)</span></label>
+      <textarea id="target" maxlength="6000" required placeholder="e.g. Head of Growth at a Prague fintech. LinkedIn About: 'I help early-stage teams find repeatable acquisition channels...'"></textarea>
+      <div class="counter"><span id="target-count">0</span>/6000</div>
+    </div>
+
+    <div class="field">
+      <label for="offer">From — what do you want? <span class="hint">(your offer, ask, or goal — be honest)</span></label>
+      <textarea id="offer" maxlength="2000" required placeholder="e.g. I'm an 18-year-old founder looking for a 20-minute call to get feedback on my outreach tool."></textarea>
+      <div class="counter"><span id="offer-count">0</span>/2000</div>
+    </div>
+
+    <div class="field">
+      <label for="channel">Via — channel</label>
+      <select id="channel">
+        <option value="linkedin">LinkedIn DM</option>
+        <option value="email">Cold email</option>
+        <option value="twitter">Twitter / X DM</option>
+      </select>
+    </div>
+
+    <button class="send" id="send" type="submit">Write my messages</button>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </form>
+
+  <section id="results" aria-label="Generated messages">
+    <p class="results-head">Two drafts, two angles — pick one and make it yours</p>
+    <div id="cards"></div>
+  </section>
+
+  <footer>
+    <span>Built by Karina · AI-assisted, human-edited</span>
+    <span>Powered by Claude</span>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById('form');
+  var send = document.getElementById('send');
+  var statusEl = document.getElementById('status');
+  var results = document.getElementById('results');
+  var cards = document.getElementById('cards');
+
+  function bindCounter(id) {
+    var el = document.getElementById(id);
+    var count = document.getElementById(id + '-count');
+    el.addEventListener('input', function () { count.textContent = el.value.length; });
+  }
+  bindCounter('target');
+  bindCounter('offer');
+
+  function setStatus(kind, text) {
+    statusEl.className = 'status' + (kind ? ' ' + kind : '');
+    statusEl.textContent = text || '';
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function renderCard(variant, index, channel) {
+    var card = document.createElement('div');
+    card.className = 'msg-card';
+    var subjectHtml = (channel === 'email' && variant.subject)
+      ? '<div class="msg-subject">Subject: ' + escapeHtml(variant.subject) + '</div>'
+      : '';
+    card.innerHTML =
+      '<div class="airmail" aria-hidden="true"></div>' +
+      '<div class="msg-body">' +
+        '<div class="msg-label">Draft ' + (index + 1) + ' — ' + escapeHtml(variant.angle || 'personalized') + '</div>' +
+        subjectHtml +
+        '<div class="msg-text">' + escapeHtml(variant.message) + '</div>' +
+        '<div class="editor-note"><strong>Why this works</strong><br>' + escapeHtml(variant.why || '') + '</div>' +
+      '</div>' +
+      '<div class="msg-actions"><button type="button" class="copy">Copy message</button></div>';
+
+    card.querySelector('.copy').addEventListener('click', function () {
+      var btn = this;
+      var textToCopy = (channel === 'email' && variant.subject)
+        ? 'Subject: ' + variant.subject + '\n\n' + variant.message
+        : variant.message;
+      navigator.clipboard.writeText(textToCopy).then(function () {
+        btn.textContent = 'Copied ✓';
+        setTimeout(function () { btn.textContent = 'Copy message'; }, 1600);
+      });
+    });
+    return card;
+  }
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var target = document.getElementById('target').value.trim();
+    var offer = document.getElementById('offer').value.trim();
+    var channel = document.getElementById('channel').value;
+
+    if (target.length < 30) { setStatus('error', 'Add more about your target — at least a sentence or two of their bio.'); return; }
+    if (offer.length < 15) { setStatus('error', 'Describe your offer or ask in at least one sentence.'); return; }
+
+    send.disabled = true;
+    send.textContent = 'Writing…';
+    setStatus('loading', 'Reading their profile and drafting…');
+    results.style.display = 'none';
+    cards.innerHTML = '';
+
+    try {
+      var res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ target: target, offer: offer, channel: channel })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      if (!data.variants || !data.variants.length) throw new Error('No drafts returned. Try again.');
+
+      data.variants.forEach(function (v, i) { cards.appendChild(renderCard(v, i, channel)); });
+      results.style.display = 'block';
+      setStatus('', '');
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      setStatus('error', err.message);
+    } finally {
+      send.disabled = false;
+      send.textContent = 'Write my messages';
+    }
+  });
+})();
+</script>
+</body>
+</html>
